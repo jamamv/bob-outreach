@@ -1,5 +1,5 @@
 /**
- * Salesperson feedback: a 1-5 score per generated email, plus how much they
+ * Sender feedback: a 1-5 score per generated email, plus how much they
  * edited it before copying. Stored as JSON lines next to runs.jsonl and joined
  * by runId, so scores can be broken down by tone, tier and model.
  */

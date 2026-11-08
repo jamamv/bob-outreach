@@ -5,15 +5,25 @@ import { TONES, checkInput, startLookup, createEmail } from './core.js';
 import { assessHelper } from './insights.js';
 import { SYSTEM_PROMPT, buildUserMessage } from './prompt.js';
 
-const USAGE = `Usage: raphie-outreach [options]
+const USAGE = `Usage: bob [options]
 
-Prompts for any value not passed as a flag.
+Bob writes personalised cold emails.
 
-  --name <name>          Recipient's name, e.g. "Alex Gould"
-  --company <company>    Company name, e.g. "Big Bet Sports"
-  --description <text>   Short description of the company
+Prompts for any value not passed as a flag (or set in .env).
+
+About you (defaults: SENDER_NAME, SENDER_COMPANY, SENDER_OFFER, SENDER_PROOF):
+  --from-name <name>     Your name, e.g. "Sam Lee"
+  --from-company <name>  Your company, e.g. "Fieldnote"
+  --offer <text>         What you sell, in one or two sentences
+  --proof <text>         Optional: a real result or customer you can mention
+
+About them:
+  --name <name>          Recipient's name, e.g. "Jane Doe"
+  --company <company>    Their company, e.g. "Corvid Logistics"
+  --description <text>   What their company does, and why you are reaching out
   --tone <direct|warm>   Email tone
-  --model <model>        Use this OpenAI model for every email (default: routed, ${config.model} with helper data, ${config.lightModel} without)
+
+  --model <model>        Use this OpenAI model for every email (default: routed, ${config.model} with lookup data, ${config.lightModel} without)
   -v, --verbose          Show retries, repairs, and a rejected draft if there is one
   --dry-run              Print the prompt that would be sent, without calling OpenAI
   -h, --help             Show this help
@@ -43,6 +53,10 @@ async function askRequired(lines, question) {
   }
 }
 
+async function askOptional(lines, question) {
+  return (await nextLine(lines, question)).trim();
+}
+
 async function askTone(lines) {
   for (;;) {
     const answer = (await nextLine(lines, 'Tone, "direct" or "warm" [direct]: ')).trim().toLowerCase();
@@ -60,6 +74,10 @@ export async function run(argv) {
       args: argv,
       strict: true,
       options: {
+        'from-name': { type: 'string' },
+        'from-company': { type: 'string' },
+        offer: { type: 'string' },
+        proof: { type: 'string' },
         name: { type: 'string' },
         company: { type: 'string' },
         description: { type: 'string' },
@@ -86,7 +104,14 @@ export async function run(argv) {
     return 1;
   }
 
-  const needsPrompt = !values.name || !values.company || !values.description || !values.tone;
+  const sender = {
+    senderName: (values['from-name'] ?? config.sender.name).trim(),
+    senderCompany: (values['from-company'] ?? config.sender.company).trim(),
+    offer: (values.offer ?? config.sender.offer).trim(),
+    proof: (values.proof ?? config.sender.proof).trim(),
+  };
+  const askSender = !sender.senderName || !sender.senderCompany || !sender.offer;
+  const needsPrompt = askSender || !values.name || !values.company || !values.description || !values.tone;
   const rl = needsPrompt ? readline.createInterface({ input: process.stdin, output: process.stderr }) : null;
   rl?.on('SIGINT', () => {
     err('\nCancelled.');
@@ -94,14 +119,24 @@ export async function run(argv) {
   });
   const lines = rl?.[Symbol.asyncIterator]();
 
-  const input = {};
+  const input = { ...sender };
   let lookup;
   try {
+    if (askSender) {
+      err('About you (set SENDER_NAME, SENDER_COMPANY and SENDER_OFFER in .env to skip these):');
+      input.senderName ||= await askRequired(lines, 'Your name: ');
+      input.senderCompany ||= await askRequired(lines, 'Your company: ');
+      input.offer ||= await askRequired(lines, 'What do you offer? One or two sentences: ');
+      if (values.proof === undefined && !config.sender.proof) {
+        input.proof = await askOptional(lines, 'A real result or customer you can mention (optional, Enter to skip): ');
+      }
+      err('\nAbout them:');
+    }
     input.recipientName = values.name?.trim() || (await askRequired(lines, "Recipient's name: "));
-    input.companyName = values.company?.trim() || (await askRequired(lines, 'Company name: '));
-    // Start the slow helper lookup now, so it runs while the user types the rest.
+    input.companyName = values.company?.trim() || (await askRequired(lines, 'Their company: '));
+    // Start the slow lookup now, so it runs while the user types the rest.
     lookup = startLookup(input.companyName, verbose);
-    input.description = values.description?.trim() || (await askRequired(lines, 'Short company description: '));
+    input.description = values.description?.trim() || (await askRequired(lines, 'What does their company do, and why are you reaching out? '));
     input.tone = values.tone?.trim().toLowerCase() || (await askTone(lines));
   } catch (e) {
     err(`\n${e.message}.`);
@@ -116,7 +151,7 @@ export async function run(argv) {
     return 1;
   }
 
-  err('\nLooking up the company...');
+  err(config.helperUrl ? '\nLooking up the company...' : '');
   if (dryRun) {
     const assessment = assessHelper(await lookup);
     console.log(`===== SYSTEM (prompts/system.md) =====\n${SYSTEM_PROMPT}\n===== USER =====\n${buildUserMessage(input, assessment)}`);
@@ -129,14 +164,14 @@ export async function run(argv) {
       input,
       lookup,
       model: values.model,
-      log: (line) => (/^(Helper|  [✓·✗-] )/.test(line) ? err(line) : verbose(line)),
+      log: (line) => (/^(Lookup|Company lookup|No company lookup|  [✓·✗-] )/.test(line) ? err(line) : verbose(line)),
     });
   } catch (e) {
     err(`\nOpenAI request failed: ${e.message}`);
     return 1;
   }
 
-  err(`Writing as: ${result.accountType}. Helper facts used: ${result.helperFactsUsed.join('; ') || 'none'}.`);
+  err(`Angle: ${result.angle}. Lookup facts used: ${result.helperFactsUsed.join('; ') || 'none'}.`);
   if (!result.ok) {
     err(`\nNo email passed every rule after ${result.attempts} attempts:`);
     result.violations.forEach((v) => err(`  - ${v.message}`));

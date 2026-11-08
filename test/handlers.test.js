@@ -20,7 +20,7 @@ test('requires the access code when one is configured', async () => {
 
 test('rejects non-POST requests and invalid input before calling any API', async () => {
   assert.equal((await call(handleGenerate, { method: 'GET' })).statusCode, 405);
-  const r = await call(handleGenerate, { body: { recipientName: '', companyName: 'X', description: 'Y', tone: 'loud' } });
+  const r = await call(handleGenerate, { body: { recipientName: '', companyName: 'X', description: 'Y', tone: 'loud', senderName: 'Sam', senderCompany: 'Fieldnote', offer: 'Call notes' } });
   assert.equal(r.statusCode, 400);
   assert.match(r.body.error, /recipientName is required; tone must be/);
 });
@@ -32,11 +32,11 @@ test('feedback is validated and saved', async () => {
 });
 
 test('a lookup passed back by the page is used only for the same company', () => {
-  const lookup = { companyName: 'Big Bet', ok: true, data: { confidence: 0.9 } };
-  assert.deepEqual(lookupFromBody({ lookup }, 'Big Bet'), { ok: true, data: { confidence: 0.9 } });
+  const lookup = { companyName: 'Corvid', ok: true, data: { confidence: 0.9 } };
+  assert.deepEqual(lookupFromBody({ lookup }, 'Corvid'), { ok: true, data: { confidence: 0.9 } });
   assert.equal(lookupFromBody({ lookup }, 'Other Co'), null);
-  assert.equal(lookupFromBody({ lookup: { ...lookup, data: [] } }, 'Big Bet'), null);
-  assert.deepEqual(lookupFromBody({ lookup: { companyName: 'Big Bet', ok: false, reason: 'HTTP 503' } }, 'Big Bet'), { ok: false, reason: 'HTTP 503' });
+  assert.equal(lookupFromBody({ lookup: { ...lookup, data: [] } }, 'Corvid'), null);
+  assert.deepEqual(lookupFromBody({ lookup: { companyName: 'Corvid', ok: false, reason: 'HTTP 503' } }, 'Corvid'), { ok: false, reason: 'HTTP 503' });
 });
 
 test('a JSON body that is not an object is a 400, not a crash', async () => {

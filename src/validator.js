@@ -1,5 +1,5 @@
 /**
- * Deterministic checks for Raphie's "must not feel AI-generated" rules.
+ * Deterministic checks for the "must not feel AI-generated" writing rules.
  * The model is asked to follow these, but the validator is the source of truth.
  *
  * Sentence model: every non-empty line is split into sentences. Greeting
@@ -10,8 +10,8 @@
 export const MAX_SENTENCE_WORDS = 30;
 export const MAX_EXCLAMATIONS = 1;
 
-// Words that make copy read as AI-written or corporate. Not one of Alex's hard
-// rules, so they produce warnings (and an eval metric), not failures.
+// Words that make copy read as AI-written or corporate. Style guidance, not a
+// hard rule, so they produce warnings (and an eval metric), not failures.
 export const BUZZWORDS = [
   'leverag', 'seamless', 'synerg', 'unlock', 'game-changer', 'game changer', 'cutting-edge',
   'elevate', 'delve', 'robust', 'empower', 'revolutioni', 'best-in-class', 'world-class',
@@ -55,11 +55,15 @@ export function firstNameOf(fullName = '') {
 }
 
 export const SUBJECT_MAX_CHARS = 60;
-// Industry acronyms that are fine in capitals (3-letter ones like KYC never trigger the check).
-const ACRONYMS = new Set(['GDPR', 'LATAM', 'APAC', 'EMEA', 'MENA', 'NFL', 'NBA', 'UEFA', 'FIFA']);
+// Business acronyms that are fine in capitals (3-letter ones like CRM never trigger the check).
+const ACRONYMS = new Set(['GDPR', 'HIPAA', 'LATAM', 'APAC', 'EMEA', 'MENA', 'DACH', 'SAAS']);
 
-/** Rules for a subject line. Returns a list of problems (empty when it passes). */
-export function checkSubject(subject) {
+/**
+ * Rules for a subject line. Returns a list of problems (empty when it passes).
+ * `names` (company names) may contain capitalised words such as "NVIDIA",
+ * which are not shouting.
+ */
+export function checkSubject(subject, { names = [] } = {}) {
   const s = String(subject ?? '').trim();
   if (!s) return ['Subject is empty.'];
   const problems = [];
@@ -72,7 +76,8 @@ export function checkSubject(subject) {
   if (/fantastic/i.test(s)) problems.push('Subject uses the word "fantastic".');
   if (/^\s*(re|fwd?)\s*:/i.test(s)) problems.push('Subject fakes a reply or forward ("Re:"/"Fwd:").');
   if (/\p{Extended_Pictographic}/u.test(s)) problems.push('Subject has an emoji.');
-  const shouting = (s.match(/\b[A-Z]{4,}\b/g) ?? []).filter((w) => !ACRONYMS.has(w));
+  const allowed = new Set(names.flatMap((n) => String(n ?? '').split(/\s+/)));
+  const shouting = (s.match(/\b[A-Z]{4,}\b/g) ?? []).filter((w) => !ACRONYMS.has(w) && !allowed.has(w));
   if (shouting.length) problems.push(`Subject shouts in capitals ("${shouting[0]}").`);
   return problems;
 }
@@ -87,10 +92,10 @@ const quote = (s, max = 80) => `"${s.length > max ? `${s.slice(0, max)}...` : s}
 
 /**
  * @param {string} email
- * @param {{ recipientName?: string, companyName?: string }} required
+ * @param {{ recipientName?: string, companyName?: string, senderCompany?: string }} required
  * @returns {{ ok: boolean, violations: {rule: string, message: string}[], stats: object }}
  */
-export function validateEmail(email, { recipientName, companyName } = {}) {
+export function validateEmail(email, { recipientName, companyName, senderCompany } = {}) {
   const violations = [];
   const add = (rule, message) => violations.push({ rule, message });
   const sentences = splitSentences(email);
@@ -139,7 +144,9 @@ export function validateEmail(email, { recipientName, companyName } = {}) {
   if (!/\b(call|chat|conversation|meet|meeting|talk)\b/i.test(email) || !email.includes('?')) {
     add('missing_cta', 'Missing a question suggesting a short call or meeting.');
   }
-  if (!/\bRaphie\b/.test(email)) add('missing_sender', 'Does not mention Raphie.');
+  if (senderCompany && !email.toLowerCase().includes(senderCompany.trim().toLowerCase())) {
+    add('missing_sender', `Does not mention your company "${senderCompany.trim()}".`);
+  }
 
   // Soft checks: reported, never a reason to reject.
   const warnings = BUZZWORDS.filter((w) => new RegExp(`\\b${escapeRegex(w)}`, 'i').test(email)).map((w) => ({

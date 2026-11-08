@@ -4,8 +4,8 @@ import { sanitize } from '../src/sanitize.js';
 import { validateEmail } from '../src/validator.js';
 
 test('removes em dashes', () => {
-  const { text } = sanitize('Raphie helps \u2014 fast. Teams win\u2014quickly.');
-  assert.equal(text, 'Raphie helps, fast. Teams win, quickly.');
+  const { text } = sanitize('Bob helps \u2014 fast. Teams win\u2014quickly.');
+  assert.equal(text, 'Bob helps, fast. Teams win, quickly.');
 });
 
 test('strips banned openers and recapitalises', () => {

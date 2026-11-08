@@ -31,5 +31,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.error('OPENAI_API_KEY is not set. Copy .env.example to .env and add your key.');
     process.exit(1);
   }
-  createApp().listen(config.port, () => console.log(`Raphie Outreach running at http://localhost:${config.port}`));
+  createApp().listen(config.port, () => console.log(`Bob is running at http://localhost:${config.port}`));
 }

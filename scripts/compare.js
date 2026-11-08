@@ -2,7 +2,7 @@
 /**
  * Rescores saved eval results with the current scenario checks, so runs made
  * at different times are compared with the same yardstick.
- * Usage: node scripts/compare.js baseline after-gpt-5.5 [...]
+ * Usage: node scripts/compare.js run-a run-b [...]
  */
 import { readFileSync } from 'node:fs';
 import { costOf } from './prices.js';
@@ -31,7 +31,7 @@ function score(label) {
   const leaks = done.map((r) => check(r, 'expectAbsent', false)).filter((v) => v !== null);
   const seen = {};
   for (const r of done) {
-    const e = words(r.email.split('\n').slice(1, -2).join(' '));
+    const e = words(r.email.split('\n\n').slice(1, -1).join(' '));
     for (let i = 0; i + 3 <= e.length; i++) (seen[e.slice(i, i + 3).join(' ')] ??= new Set()).add(r.id);
   }
   const companies = new Set(done.map((r) => r.id)).size;
@@ -39,9 +39,8 @@ function score(label) {
     label,
     'rules pass': pct(done.map((r) => r.ok)),
     'first try': pct(done.map((r) => r.firstTry)),
-    'right company type': pct(done.filter((r) => r.typeOk !== null).map((r) => r.typeOk)),
-    'helper-only fact used (high)': pct(tailored),
-    'no helper leak (low)': pct(leaks),
+    'lookup-only fact used (high)': pct(tailored),
+    'no lookup leak (low)': pct(leaks),
     'stock phrases (in >=half of companies)': companies < 3 ? '-' : Object.values(seen).filter((s) => s.size >= companies / 2).length,
     'avg words': Math.round(done.reduce((n, r) => n + r.words, 0) / done.length),
     'copied 5-grams': (done.reduce((n, r) => n + r.copied.length, 0) / done.length).toFixed(1),

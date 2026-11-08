@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 /**
  * Eval harness: runs fixed scenarios against the real OpenAI API with
- * *recorded* helper responses (test/fixtures), so the model is the only
- * moving part. Measures what the brief cares about:
+ * *recorded* lookup responses (test/fixtures), so the model is the only
+ * moving part. Measures:
  *
- *   rules     passes every Alex rule (first try / after repair)
- *   type      the company type the email was written for matches the scenario
- *   tailor    helper-only facts appear when trusted, and stay out when not
+ *   rules     passes every writing rule (first try / after repair)
+ *   tailor    lookup-only facts appear when trusted, and stay out when not
  *   copied    5-word phrases lifted from the prompt (templated feel)
  *   buzz      buzzwords that make copy read as AI-written
  *   stock     (summary) 3-word phrases used for at least half of the different
@@ -69,8 +68,7 @@ async function runOne(sc, rep) {
       attempts: r.attempts,
       violations: r.violations,
       tier: r.tier,
-      type: r.accountType,
-      typeOk: sc.expectType ? r.accountType === sc.expectType : null,
+      angle: r.angle,
       mentionOk: sc.expectMention ? new RegExp(sc.expectMention, 'i').test(r.email) : null,
       absentOk: sc.expectAbsent ? !new RegExp(sc.expectAbsent, 'i').test(r.email) : null,
       copied: copiedPhrases(r.email, reference),
@@ -96,7 +94,7 @@ await Promise.all(workers);
 results.sort((a, b) => a.id.localeCompare(b.id) || a.rep - b.rep);
 
 const mark = (v) => (v === null || v === undefined ? '-' : v ? 'yes' : 'NO');
-console.log('\nscenario                  tier      type         rules  1st  type  tailor  copied  buzz  words  sec');
+console.log('\nscenario                  tier      angle                     rules  1st  tailor  copied  buzz  words  sec');
 for (const r of results) {
   if (r.error) {
     console.log(`${r.id.padEnd(25)} ERROR ${r.error}`);
@@ -104,7 +102,7 @@ for (const r of results) {
   }
   const tailor = r.mentionOk ?? r.absentOk;
   console.log(
-    `${r.id.padEnd(25)} ${String(r.tier).padEnd(9)} ${String(r.type).padEnd(12)} ${mark(r.ok).padEnd(6)} ${mark(r.firstTry).padEnd(4)} ${mark(r.typeOk).padEnd(5)} ${mark(tailor).padEnd(7)} ${String(r.copied.length).padEnd(7)} ${String(r.buzz.length).padEnd(5)} ${String(r.words).padEnd(6)} ${(r.ms / 1000).toFixed(1)}`,
+    `${r.id.padEnd(25)} ${String(r.tier).padEnd(9)} ${String(r.angle).slice(0, 25).padEnd(25)} ${mark(r.ok).padEnd(6)} ${mark(r.firstTry).padEnd(4)} ${mark(tailor).padEnd(7)} ${String(r.copied.length).padEnd(7)} ${String(r.buzz.length).padEnd(5)} ${String(r.words).padEnd(6)} ${(r.ms / 1000).toFixed(1)}`,
   );
 }
 
@@ -112,7 +110,7 @@ const done = results.filter((r) => !r.error);
 function stockPhrases(rows, n = 3) {
   const seenIn = {};
   for (const r of rows) {
-    const body = r.email.split('\n').slice(1, -2).join(' '); // greeting and sign-off are added by code
+    const body = r.email.split('\n\n').slice(1, -1).join(' '); // greeting and sign-off are added by code
     const e = words(body);
     for (let i = 0; i + n <= e.length; i++) (seenIn[e.slice(i, i + n).join(' ')] ??= new Set()).add(r.id);
   }
@@ -145,7 +143,6 @@ const summary = {
   errors: results.length - done.length,
   rulesPass: pct(done.map((r) => r.ok)),
   firstTryPass: pct(done.map((r) => r.firstTry)),
-  typeCorrect: pct(done.filter((r) => r.typeOk !== null).map((r) => r.typeOk)),
   tailoringChecks: pct(done.flatMap((r) => [r.mentionOk, r.absentOk]).filter((v) => v !== null)),
   avgCopiedPhrases: (done.reduce((n, r) => n + r.copied.length, 0) / (done.length || 1)).toFixed(1),
   avgBuzzwords: (done.reduce((n, r) => n + r.buzz.length, 0) / (done.length || 1)).toFixed(1),

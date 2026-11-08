@@ -3,12 +3,13 @@
  * functions (api/*.js). They are stateless, so they behave the same on one
  * laptop or on many serverless instances:
  *
- *   POST /api/lookup   { companyName }                 -> helper result + field report
+ *   POST /api/lookup   { companyName }                 -> lookup result + field report
  *   POST /api/generate { ...inputs, lookup? }          -> email + explanation
  *        `lookup` is the result /api/lookup returned, passed back by the page so
- *        the helper is not called twice. It is re-checked by the same per-field
- *        allow-lists as a live response, so a client cannot inject anything a
- *        helper response could not.
+ *        the lookup is not called twice. It is re-checked by the same per-field
+ *        checks as a live response, so a client cannot inject anything a
+ *        lookup response could not.
+ *        Empty sender fields fall back to SENDER_* in the environment.
  *   POST /api/subject  { ...inputs, email }            -> a new subject line
  *   POST /api/feedback { runId, score, ... }           -> feedback log
  *
@@ -72,11 +73,16 @@ const endpoint = (handler) => async (req, res) => {
   }
 };
 
+const text = (v) => String(v ?? '').trim();
 const inputFrom = (body) => ({
-  recipientName: String(body.recipientName ?? '').trim(),
-  companyName: String(body.companyName ?? '').trim(),
-  description: String(body.description ?? '').trim(),
-  tone: String(body.tone ?? '').trim().toLowerCase(),
+  recipientName: text(body.recipientName),
+  companyName: text(body.companyName),
+  description: text(body.description),
+  tone: text(body.tone).toLowerCase(),
+  senderName: text(body.senderName) || config.sender.name,
+  senderCompany: text(body.senderCompany) || config.sender.company,
+  offer: text(body.offer) || config.sender.offer,
+  proof: text(body.proof) || config.sender.proof,
 });
 
 /** Accepts a lookup result passed back by the page, only for the same company. */
@@ -95,6 +101,7 @@ export const handleLookup = endpoint(async (body, res) => {
   const assessment = assessHelper(result);
   sendJson(res, 200, {
     lookup: { companyName, ok: result.ok, data: result.data, reason: result.reason },
+    enabled: Boolean(config.helperUrl),
     tier: assessment.tier,
     confidence: assessment.confidence,
     explanation: describeAssessment(assessment),
@@ -117,7 +124,7 @@ export const handleGenerate = endpoint(async (body, res) => {
     warnings: r.warnings.map((w) => w.message),
     explanation: r.explanation,
     tier: r.tier,
-    accountType: r.accountType,
+    angle: r.angle,
     helperFactsUsed: r.helperFactsUsed,
     attempts: r.attempts,
     seconds: Number((r.ms / 1000).toFixed(1)),

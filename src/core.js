@@ -6,34 +6,38 @@ import { randomUUID } from 'node:crypto';
 import OpenAI from 'openai';
 import { config } from './config.js';
 import { fetchCompanyAnalysis } from './helper.js';
-import { assessHelper, describeAssessment } from './insights.js';
+import { assessHelper, describeAssessment, NOT_CONFIGURED } from './insights.js';
 import { generateEmail } from './generator.js';
 import { generateSubject } from './subject.js';
 import { appendRunLog } from './runlog.js';
 
 export const TONES = ['direct', 'warm'];
-const LIMITS = { recipientName: 100, companyName: 120, description: 600 };
+const LIMITS = { recipientName: 100, companyName: 120, description: 600, senderName: 100, senderCompany: 120, offer: 600, proof: 300 };
+const REQUIRED = ['recipientName', 'companyName', 'description', 'senderName', 'senderCompany', 'offer'];
 
-/** Returns a list of problems with the inputs (empty when valid). */
-export function checkInput({ recipientName, companyName, description, tone }) {
+/** Returns a list of problems with the inputs (empty when valid). `proof` is optional. */
+export function checkInput(input) {
   const problems = [];
-  for (const [field, value] of Object.entries({ recipientName, companyName, description })) {
-    if (!value?.trim()) problems.push(`${field} is required`);
-    else if (value.length > LIMITS[field]) problems.push(`${field} is longer than ${LIMITS[field]} characters`);
+  for (const field of Object.keys(LIMITS)) {
+    const value = input[field];
+    if (!value?.trim()) {
+      if (REQUIRED.includes(field)) problems.push(`${field} is required`);
+    } else if (value.length > LIMITS[field]) problems.push(`${field} is longer than ${LIMITS[field]} characters`);
   }
-  if (!TONES.includes(tone)) problems.push('tone must be "direct" or "warm"');
+  if (!TONES.includes(input.tone)) problems.push('tone must be "direct" or "warm"');
   return problems;
 }
 
-/** Start the helper call early; the returned promise never rejects. */
+/** Start the lookup early; the returned promise never rejects. Without HELPER_URL there is no lookup. */
 export function startLookup(companyName, log) {
+  if (!config.helperUrl) return Promise.resolve({ ok: false, reason: NOT_CONFIGURED, attempts: 0, ms: 0 });
   return fetchCompanyAnalysis(companyName.trim(), { helperUrl: config.helperUrl, budgetMs: config.helperBudgetMs, log });
 }
 
 let client;
 const getClient = () => (client ??= new OpenAI({ apiKey: config.openaiApiKey, timeout: 60_000, maxRetries: 2 }));
 
-/** Picks the model for this email: the larger one only when there are trusted helper facts to use. */
+/** Picks the model for this email: the larger one only when there are trusted lookup facts to use. */
 export function routeModel(tier) {
   return tier === 'tailored'
     ? { model: config.model, reasoningEffort: config.reasoningEffort }
@@ -46,7 +50,7 @@ export function createSubject({ input, email, log = () => {} }) {
 }
 
 /**
- * @param input  { recipientName, companyName, description, tone }
+ * @param input  { recipientName, companyName, description, tone, senderName, senderCompany, offer, proof? }
  * @param lookup promise from startLookup (or a ready helper result)
  * @returns everything the CLI / UI need to show the email and explain it
  */
@@ -88,7 +92,7 @@ export async function createEmail({ input, lookup, model, reasoningEffort, log =
       model,
       reasoningEffort,
       usage: result.usage,
-      accountType: result.accountType,
+      angle: result.angle,
       helperFactsUsed: result.helperFactsUsed,
       ok: result.ok,
       attempts: result.attempts,

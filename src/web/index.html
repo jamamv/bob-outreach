@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raphie Outreach</title>
+<title>Bob</title>
 <style>
   :root {
     --bg: #faf9f6; --surface: #ffffff; --text: #1f1e1c; --muted: #6b6862; --line: #e6e3dc;
@@ -32,7 +32,12 @@
   }
   input[type=text]:focus, textarea:focus { border-color: var(--muted); }
   textarea { resize: vertical; }
-  #description { min-height: 96px; }
+  #description, #offer { min-height: 96px; }
+  #proof { min-height: 60px; }
+  .sender { border-bottom: 1px solid var(--line); margin-bottom: 18px; padding-bottom: 14px; }
+  .sender summary { cursor: pointer; font-size: 15px; font-weight: 600; list-style-position: inside; }
+  .sender summary .help { font-size: 14px; margin-left: 4px; }
+  .sender[open] summary { margin-bottom: 14px; }
   .status { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 1.4em; }
   .status.tailored { color: var(--ok); }
   .status.ignored, .status.none { color: var(--warn); }
@@ -78,7 +83,7 @@
 </style>
 </head>
 <body>
-<header>Raphie Outreach <span>· cold email writer</span></header>
+<header>Bob <span>· your cold email writer</span></header>
 <main>
   <form class="panel" id="form" novalidate>
     <div class="hidden" id="accessBox">
@@ -86,16 +91,32 @@
       <input type="text" id="accessCode" autocomplete="off">
       <div class="status">Saved in this browser after the first successful request.</div>
     </div>
+    <details class="sender" id="senderBox" open>
+      <summary>About you <span class="help" id="senderSummary"></span></summary>
+      <label for="senderName">Your name</label>
+      <input type="text" id="senderName" placeholder="e.g. Sam Lee" maxlength="100" autocomplete="name" required>
+
+      <label for="senderCompany">Your company</label>
+      <input type="text" id="senderCompany" placeholder="e.g. Fieldnote" maxlength="120" autocomplete="organization" required>
+
+      <label for="offer">What do you offer? <span class="help">One or two sentences, in your words</span></label>
+      <textarea id="offer" maxlength="600" placeholder="e.g. Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically." required></textarea>
+
+      <label for="proof">Proof point <span class="help">(optional) a real result or customer</span></label>
+      <textarea id="proof" maxlength="300" placeholder="e.g. Reps at Hartley Freight save about 4 hours a week on admin."></textarea>
+      <div class="status">Remembered in this browser.</div>
+    </details>
+
     <h2>Who are you writing to?</h2>
     <label for="recipientName">Recipient's name</label>
     <input type="text" id="recipientName" placeholder="e.g. Jane Doe" maxlength="100" autocomplete="off" required>
 
-    <label for="companyName">Company</label>
-    <input type="text" id="companyName" placeholder="e.g. Riverline Sportsbook" maxlength="120" autocomplete="off" required>
+    <label for="companyName">Their company</label>
+    <input type="text" id="companyName" placeholder="e.g. Corvid Logistics" maxlength="120" autocomplete="off" required>
     <div class="status" id="lookupStatus" aria-live="polite"></div>
 
-    <label for="description">What does the company do? <span class="help">What does their support deal with?</span></label>
-    <textarea id="description" maxlength="600" placeholder="e.g. A sportsbook operator with high withdrawal volume and frequent KYC tickets" required></textarea>
+    <label for="description">What do they do? <span class="help">And why are you reaching out?</span></label>
+    <textarea id="description" maxlength="600" placeholder="e.g. A freight brokerage whose sales team has doubled this year and logs every call by hand" required></textarea>
 
     <label>Tone</label>
     <div class="segmented" role="radiogroup" aria-label="Tone">
@@ -166,6 +187,8 @@ import { validateEmail, checkSubject } from '/validator.js';
 const $ = (id) => document.getElementById(id);
 const form = $('form');
 const fields = { recipientName: $('recipientName'), companyName: $('companyName'), description: $('description') };
+const senderFields = { senderName: $('senderName'), senderCompany: $('senderCompany'), offer: $('offer'), proof: $('proof') };
+const OPTIONAL = ['proof'];
 const states = ['emptyState', 'loadingState', 'errorState', 'emailState'];
 
 let lookup = { companyName: '', promise: null };
@@ -175,12 +198,13 @@ let score = null;
 let busy = false;
 
 const values = () => ({
+  ...Object.fromEntries(Object.entries(senderFields).map(([k, el]) => [k, el.value.trim()])),
   recipientName: fields.recipientName.value.trim(),
   companyName: fields.companyName.value.trim(),
   description: fields.description.value.trim(),
   tone: form.querySelector('input[name=tone]:checked').value,
 });
-const isComplete = () => Object.values(values()).every(Boolean);
+const isComplete = () => Object.entries(values()).every(([k, v]) => OPTIONAL.includes(k) || Boolean(v));
 const show = (id) => states.forEach((s) => $(s).classList.toggle('hidden', s !== id));
 
 const store = {
@@ -188,6 +212,21 @@ const store = {
   set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode: fine */ } },
 };
 $('accessCode').value = store.get('accessCode');
+
+// --- About you: remembered per browser, folded away once filled in ---------------
+function loadSender() {
+  for (const [k, el] of Object.entries(senderFields)) el.value = store.get(`sender.${k}`);
+}
+function senderSummary() {
+  const { senderName, senderCompany } = values();
+  $('senderSummary').textContent = senderName && senderCompany ? `· ${senderName}, ${senderCompany}` : '';
+}
+loadSender();
+senderSummary();
+if (['senderName', 'senderCompany', 'offer'].every((k) => senderFields[k].value.trim())) $('senderBox').open = false;
+for (const [k, el] of Object.entries(senderFields)) {
+  el.addEventListener('input', () => { store.set(`sender.${k}`, el.value); senderSummary(); });
+}
 
 async function api(url, body) {
   const code = $('accessCode').value.trim();
@@ -225,6 +264,11 @@ async function showLookup(companyName, promise) {
     const r = await promise;
     if (lookup.companyName !== companyName) return;
     if (!r) throw new Error('lookup failed');
+    if (r.enabled === false) {
+      status.className = 'status';
+      status.textContent = '';
+      return;
+    }
     const text = {
       tailored: `Company data found (confidence ${r.confidence?.toFixed(2)}): the email will be tailored.`,
       generic: `Some company data (confidence ${r.confidence?.toFixed(2)}): only broad facts will be used.`,
@@ -292,7 +336,7 @@ function renderEmail(r, inputs) {
   checkRules();
   checkSubjectRules();
   const facts = r.helperFactsUsed?.length ? r.helperFactsUsed.join('; ') : 'none';
-  $('meta').textContent = `Written as: ${r.accountType} · helper facts used: ${facts} · ${r.model} · ${r.seconds}s`;
+  $('meta').textContent = `Angle: ${r.angle} · company data used: ${facts} · ${r.model} · ${r.seconds}s`;
   $('why').textContent = [...r.explanation, ...r.warnings.map((w) => `Note: ${w}`)].join('\n');
   resetFeedback();
   show('emailState');
@@ -302,7 +346,8 @@ function renderEmail(r, inputs) {
 function checkRules() {
   if (!current) return;
   const text = $('email').value;
-  const { ok, violations } = validateEmail(text, { recipientName: current.inputs.recipientName, companyName: current.inputs.companyName });
+  const { recipientName, companyName, senderCompany } = current.inputs;
+  const { ok, violations } = validateEmail(text, { recipientName, companyName, senderCompany });
   const chip = $('ruleChip');
   chip.className = `chip ${ok ? 'ok' : 'bad'}`;
   chip.textContent = ok ? '✓ Passes every rule' : `✗ ${violations.length} rule problem${violations.length > 1 ? 's' : ''}`;
@@ -312,7 +357,8 @@ function checkRules() {
 }
 
 function checkSubjectRules() {
-  const problems = checkSubject($('subject').value);
+  const names = current ? [current.inputs.companyName, current.inputs.senderCompany] : [];
+  const problems = checkSubject($('subject').value, { names });
   $('subjectProblems').textContent = problems.join(' ');
 }
 
@@ -423,6 +469,7 @@ $('retry').addEventListener('click', generate);
 $('clear').addEventListener('click', () => {
   requestSeq++;
   form.reset();
+  loadSender(); // Clear is for the recipient; your own details stay.
   lookup = { companyName: '', promise: null };
   current = null;
   $('lookupStatus').textContent = '';
@@ -432,7 +479,8 @@ $('clear').addEventListener('click', () => {
   fields.recipientName.focus();
 });
 
-fields.recipientName.focus();
+($('senderBox').open ? senderFields.senderName : fields.recipientName).focus();
+$('generate').disabled = !isComplete();
 </script>
 </body>
 </html>

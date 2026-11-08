@@ -1,13 +1,13 @@
 {
-  "name": "raphie-outreach-cli",
+  "name": "bob-outreach",
   "version": "1.0.0",
-  "description": "Writes cold outreach emails for Raphie with OpenAI, tailored by a go-to-market helper and checked against Raphie's writing rules",
+  "description": "Bob writes personalised cold outreach emails with OpenAI, optionally tailored by a company lookup, and checked against hard writing rules",
   "type": "module",
   "bin": {
-    "raphie-outreach": "./bin/raphie-outreach.js"
+    "bob": "./bin/bob.js"
   },
   "scripts": {
-    "start": "node bin/raphie-outreach.js",
+    "start": "node bin/bob.js",
     "test": "node --test test/*.test.js",
     "eval": "node scripts/eval.js",
     "web": "node src/web/server.js",
@@ -20,7 +20,9 @@
   "keywords": [
     "cli",
     "openai",
-    "outreach"
+    "outreach",
+    "cold-email",
+    "sales"
   ],
   "license": "ISC",
   "dependencies": {

@@ -1,11 +1,11 @@
-// Connects the eval to the app's core pipeline, with a recorded helper response
+// Connects the eval to the app's core pipeline, with a recorded lookup response
 // injected in place of the live lookup.
 import { createEmail } from '../src/core.js';
 import { assessHelper } from '../src/insights.js';
 import { SYSTEM_PROMPT, buildUserMessage } from '../src/prompt.js';
 
 export async function generate({ input, helper, model, effort }) {
-  const lookup = helper ? { ok: true, data: helper } : { ok: false, reason: 'helper down (simulated)' };
+  const lookup = helper ? { ok: true, data: helper } : { ok: false, reason: 'lookup down (simulated)' };
   const r = await createEmail({ input, lookup, model, reasoningEffort: effort, record: false });
   return {
     email: r.email,
@@ -13,7 +13,7 @@ export async function generate({ input, helper, model, effort }) {
     attempts: r.attempts,
     violations: r.violations.map((v) => v.rule),
     tier: r.tier,
-    accountType: r.accountType,
+    angle: r.angle,
     usage: { ...r.usage, model: r.model },
     promptText: `${SYSTEM_PROMPT}\n${buildUserMessage(input, assessHelper(lookup))}`,
   };

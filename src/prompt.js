@@ -5,29 +5,27 @@
  * instructions.
  */
 import { readFileSync } from 'node:fs';
-import { supportMotionNote } from './insights.js';
-import { firstNameOf } from './validator.js';
+import { firstNameOf, firstWord } from './validator.js';
 
 export const SYSTEM_PROMPT = readFileSync(new URL('../prompts/system.md', import.meta.url), 'utf8');
 
 export const SIGN_OFFS = { direct: 'Best,', warm: 'Warm regards,' };
-export const ACCOUNT_TYPES = ['operator', 'platform', 'payments', 'affiliate', 'risk', 'data', 'compliance', 'other'];
 const MAX_DESCRIPTION = 600;
 
 export const EMAIL_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['accountType', 'helperFactsUsed', 'paragraphs'],
+  required: ['angle', 'helperFactsUsed', 'paragraphs'],
   properties: {
-    accountType: { type: 'string', enum: ACCOUNT_TYPES },
+    angle: { type: 'string' },
     helperFactsUsed: { type: 'array', items: { type: 'string' } },
     paragraphs: { type: 'array', items: { type: 'string' } },
   },
 };
 
 /**
- * Helper facts the description does not already mention. These are what make
- * the email specific beyond what the salesperson typed, so the prompt asks the
+ * Lookup facts the description does not already mention. These are what make
+ * the email specific beyond what the sender typed, so the prompt asks the
  * model to use at least one. Matching is a simple word-prefix check.
  */
 export function notInDescription(items, description) {
@@ -36,24 +34,26 @@ export function notInDescription(items, description) {
   return items.filter((item) => !mentioned(item));
 }
 
-/** The helper facts the model may use, in the shape the system prompt describes. */
+/** The lookup facts the model may use, in the shape the system prompt describes. */
 function helperBlock({ tier, facts }, description) {
   if (tier !== 'tailored' && tier !== 'generic') return { trust: 'none' };
   const block = { trust: tier };
+  if (facts.industry) block.industryHint = facts.industry;
   if (facts.companyType) block.companyTypeHint = facts.companyType;
-  if (facts.supportMotion) block.supportMotion = supportMotionNote(facts.supportMotion);
-  if (facts.likelyTicketDrivers) block.likelyTicketDrivers = facts.likelyTicketDrivers;
-  if (facts.complianceThemes) block.complianceThemes = facts.complianceThemes;
+  if (facts.painPoints) block.painPoints = facts.painPoints;
+  if (facts.priorities) block.priorities = facts.priorities;
+  if (facts.technologies) block.technologies = facts.technologies;
   if (facts.operatingRegions) block.operatingRegions = facts.operatingRegions;
-  if (facts.kycAmlIntensity) block.kycAmlIntensity = facts.kycAmlIntensity;
-  if (facts.isCryptoRelated) block.cryptoRelated = true;
-  const fresh = notInDescription([...(facts.likelyTicketDrivers ?? []), ...(facts.complianceThemes ?? [])], description);
+  const fresh = notInDescription([...(facts.painPoints ?? []), ...(facts.priorities ?? []), ...(facts.technologies ?? [])], description);
   if (tier === 'tailored' && fresh.length) block.notInDescription = fresh;
   return block;
 }
 
 export function buildUserMessage(input, assessment) {
+  const sender = { name: input.senderName, company: input.senderCompany, offer: input.offer };
+  if (input.proof) sender.proof = input.proof;
   const data = {
+    sender,
     recipientFirstName: firstNameOf(input.recipientName),
     companyName: input.companyName,
     description: input.description.slice(0, MAX_DESCRIPTION),
@@ -72,8 +72,19 @@ export function buildRevisionMessage(violations) {
   ].join('\n');
 }
 
+/**
+ * Sender's name, then their company on its own line. The company line is left
+ * out when it starts with the same word as the name ("Acme" from "Acme Bot"),
+ * since two lines starting alike would break the repeated-opener rule.
+ */
+export function signature({ senderName, senderCompany }) {
+  const name = senderName.trim();
+  const company = senderCompany.trim();
+  return firstWord(name) === firstWord(company) ? name : `${name}\n${company}`;
+}
+
 /** Greeting and sign-off are added here, so they can never be wrong. */
 export function renderEmail(input, paragraphs) {
   const body = paragraphs.map((p) => p.trim()).filter(Boolean).join('\n\n');
-  return `Hi ${firstNameOf(input.recipientName)},\n\n${body}\n\n${SIGN_OFFS[input.tone]}\nRaphie`;
+  return `Hi ${firstNameOf(input.recipientName)},\n\n${body}\n\n${SIGN_OFFS[input.tone]}\n${signature(input)}`;
 }

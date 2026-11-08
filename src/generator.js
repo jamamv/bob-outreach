@@ -5,7 +5,7 @@ import { validateEmail } from './validator.js';
 /**
  * Generate -> sanitize -> validate -> repair loop.
  *
- * The model returns structured JSON (company type, helper facts used, body
+ * The model returns structured JSON (angle, lookup facts used, body
  * paragraphs); code adds the greeting and sign-off. Hard bans are fixed by
  * sanitize() so they can never reach the output. Structural problems (long
  * sentences, repeated openers) go back to the model with the offending
@@ -26,7 +26,7 @@ export async function callModel(client, { model, effort, instructions, input, sc
     // and the cache key keeps every request of this kind on the same cache.
     instructions,
     input,
-    prompt_cache_key: `raphie-${name}`,
+    prompt_cache_key: `outreach-${name}`,
     text: { format: { type: 'json_schema', name, schema, strict: true } },
     ...(isReasoningModel(model) ? { reasoning: { effort } } : { temperature }),
   };
@@ -52,7 +52,7 @@ export function addUsage(total, usage = {}) {
 
 export async function generateEmail({ client, model, input, assessment, maxRepairs = 2, reasoningEffort = 'low', log = () => {} }) {
   const messages = [{ role: 'user', content: buildUserMessage(input, assessment) }];
-  const required = { recipientName: input.recipientName, companyName: input.companyName };
+  const required = { recipientName: input.recipientName, companyName: input.companyName, senderCompany: input.senderCompany };
   const usage = newUsage();
 
   for (let attempt = 1; ; attempt++) {
@@ -79,7 +79,7 @@ export async function generateEmail({ client, model, input, assessment, maxRepai
       violations: report.violations,
       warnings: report.warnings,
       stats: report.stats,
-      accountType: json.accountType,
+      angle: json.angle,
       helperFactsUsed: json.helperFactsUsed,
       usage,
     };

@@ -1,13 +1,13 @@
 /**
- * Client for the go-to-market helper endpoint.
+ * Client for the optional company lookup endpoint (HELPER_URL).
+ * Contract: POST {"name": "<company>"} -> JSON facts (see README "Company lookup").
  *
- * Retry policy, based on measuring the live endpoint (see README):
- *  - 503s are common (about 3 in 10 calls) but come back in ~0.1s, so fast
- *    failures (429, 5xx, network errors) are retried quickly, up to 4 attempts.
- *  - Normal responses take 3-4s and sometimes 15s+. The server works one
- *    request at a time, and an aborted request keeps it busy, so a slow
- *    request is waited on (up to 15s) instead of being cancelled and retried.
- *    A timeout is not retried: retrying a busy queue only makes it slower.
+ * Retry policy, built for slow and flaky enrichment APIs:
+ *  - Fast failures (429, 5xx, network errors) usually come back in well under
+ *    a second, so they are retried quickly, up to 4 attempts.
+ *  - Slow answers are waited on (up to 15s) instead of being cancelled and
+ *    retried: a cancelled request can keep a single-worker server busy, so
+ *    retrying a busy queue only makes it slower. A timeout is not retried.
  *  - Other 4xx responses are our fault and are never retried.
  *  - Everything fits in one overall budget (20s), and the CLI starts the call
  *    as soon as the company name is typed, so most of the wait overlaps typing.

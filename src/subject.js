@@ -23,15 +23,17 @@ const SUBJECT_SCHEMA = {
 export const cleanSubject = (s) =>
   String(s ?? '').replace(/\s+/g, ' ').trim().replace(/^["'“‘]+|["'”’]+$/g, '').replace(/\.$/, '').trim();
 
+const namesOf = (input) => ({ names: [input.companyName, input.senderCompany] });
+
 /** Used when the model's attempts fail the rules or the call errors. */
 export function fallbackSubject(companyName) {
-  const subject = `Support at ${companyName.trim()}`;
-  return subject.length <= SUBJECT_MAX_CHARS && !checkSubject(subject).length ? subject : 'A question about your support team';
+  const subject = `Idea for ${companyName.trim()}`;
+  return subject.length <= SUBJECT_MAX_CHARS && !checkSubject(subject, { names: [companyName] }).length ? subject : 'A quick idea for your team';
 }
 
 export async function generateSubject({ client, model, effort, input, email, log = () => {} }) {
   const usage = newUsage();
-  const data = `<data>\n${JSON.stringify({ companyName: input.companyName, tone: input.tone, email }, null, 2)}\n</data>`;
+  const data = `<data>\n${JSON.stringify({ companyName: input.companyName, senderCompany: input.senderCompany, tone: input.tone, email }, null, 2)}\n</data>`;
   let feedback = '';
   try {
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -46,7 +48,7 @@ export async function generateSubject({ client, model, effort, input, email, log
       });
       addUsage(usage, callUsage);
       const subject = cleanSubject(json.subject);
-      const problems = checkSubject(subject);
+      const problems = checkSubject(subject, namesOf(input));
       if (!problems.length) return { subject, usage, fallback: false };
       log(`subject attempt ${attempt} failed: ${problems.join(' ')}`);
       feedback = `\n\nYour previous subject "${subject}" broke these rules: ${problems.join(' ')} Write a new one.`;

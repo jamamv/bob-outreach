@@ -1,116 +1,113 @@
 [
   {
-    "id": "riverline-direct",
-    "why": "Brief example #1, high-confidence operator",
+    "id": "fieldnote-tailored",
+    "why": "Tailoring A/B (high): facts only the lookup supplies (Mexico, ramp time, cross-border) should reach the email; the description mentions none of them",
     "input": {
+      "senderName": "Sam Lee",
+      "senderCompany": "Fieldnote",
+      "offer": "Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically, so reps spend their time selling.",
+      "proof": "",
       "recipientName": "Jane Doe",
-      "companyName": "Riverline Sportsbook",
+      "companyName": "Corvid Logistics",
       "tone": "direct",
-      "description": "A sportsbook operator with high withdrawal volume, KYC questions, promo eligibility disputes, and periodic support spikes on big game days"
+      "description": "A freight brokerage with a sales team that has doubled this year"
     },
-    "helper": "riverline_operator",
-    "expectType": "operator"
+    "helper": "corvid_full",
+    "expectMention": "Mexico|ramp|cross.border"
   },
   {
-    "id": "apexpay-warm-conflict",
-    "why": "Brief example #2; helper says 'platform', description says payments, description must win",
+    "id": "fieldnote-lowconf",
+    "why": "Tailoring A/B (low): the same payload at confidence 0.21 must not leak into the email",
     "input": {
+      "senderName": "Sam Lee",
+      "senderCompany": "Fieldnote",
+      "offer": "Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically, so reps spend their time selling.",
+      "proof": "",
       "recipientName": "Jane Doe",
-      "companyName": "ApexPay Gaming",
-      "tone": "warm",
-      "description": "A payments provider for iGaming operators that supports card, ACH, and crypto on-ramps, and handles a high volume of payout status and fraud review tickets from operators and end users"
-    },
-    "helper": "apexpay_platform",
-    "expectType": "payments"
-  },
-  {
-    "id": "bigbet-tailored",
-    "why": "Tailoring A/B (high): facts only the helper supplies (US/Canada, geolocation, age verification, AML, PII) should reach the email; the description mentions none of them",
-    "input": {
-      "recipientName": "Alex Gould",
-      "companyName": "Big Bet Sports",
+      "companyName": "Corvid Logistics",
       "tone": "direct",
-      "description": "A sportsbook operator with high withdrawal volume and frequent KYC tickets"
+      "description": "A freight brokerage with a sales team that has doubled this year"
     },
-    "helper": "draftkings_full",
-    "expectType": "operator",
-    "expectMention": "\\bgeoloc|\\blocation|age verif|responsible gam|\\bUS\\b|United States|Canad|\\bAML\\b|\\bPII\\b"
+    "helper": "corvid_low",
+    "expectAbsent": "Mexico|ramp|cross.border"
   },
   {
-    "id": "bigbet-lowconf",
-    "why": "Tailoring A/B (low): same payload at confidence 0.2; none of those helper-only facts may appear",
+    "id": "pantrypal-warm-nolookup",
+    "why": "Lookup down: written from the description alone, warm tone, with a proof point",
     "input": {
-      "recipientName": "Alex Gould",
-      "companyName": "Big Bet Sports",
-      "tone": "direct",
-      "description": "A sportsbook operator with high withdrawal volume and frequent KYC tickets"
-    },
-    "helper": "draftkings_full",
-    "override": {
-      "confidence": 0.2
-    },
-    "expectType": "operator",
-    "expectAbsent": "\\bgeoloc|\\blocation|age verif|responsible gam|\\bUS\\b|United States|Canad|\\bAML\\b|\\bPII\\b"
-  },
-  {
-    "id": "affiliate-warm",
-    "why": "Affiliate; helper mislabels it 'platform'",
-    "input": {
-      "recipientName": "Sam Patel",
-      "companyName": "Odds Affiliate Network",
+      "senderName": "Priya Shah",
+      "senderCompany": "Pantrypal",
+      "offer": "Pantrypal tracks kitchen stock from supplier invoices and tells chefs what to reorder before they run out.",
+      "proof": "Harbour Kitchen cut food waste by about a fifth in three months.",
+      "recipientName": "Marco Rossi",
+      "companyName": "Olive & Ash",
       "tone": "warm",
-      "description": "An affiliate network that sends traffic to sportsbooks and casinos and gets lots of partner questions about tracking and commissions"
+      "description": "A group of four Mediterranean restaurants in Bristol, opening a fifth this spring"
     },
-    "helper": "odds_affiliate",
-    "expectType": "affiliate"
+    "helper": null
   },
   {
-    "id": "crypto-warm",
-    "why": "Crypto operator with vague regions (INTL)",
+    "id": "securelane-junk",
+    "why": "Junk lookup values at confidence 0.99 (error string as company type, n/a, vague regions) must be dropped",
     "input": {
-      "recipientName": "Chris Wong",
-      "companyName": "Zeta Crypto Casino",
-      "tone": "warm",
-      "description": "An offshore crypto casino with deposit and withdrawal questions and bonus disputes"
-    },
-    "helper": "zeta_crypto",
-    "expectType": "operator"
-  },
-  {
-    "id": "lowconf-data",
-    "why": "Unknown name, helper thinks it is a manufacturer at 0.22; description must carry the email",
-    "input": {
-      "recipientName": "Maria Lopez",
-      "companyName": "Acme Widgets",
+      "senderName": "Tom Becker",
+      "senderCompany": "Securelane",
+      "offer": "Securelane automates SOC 2 evidence collection and fills in security questionnaires from your existing policies.",
+      "proof": "",
+      "recipientName": "Aisha Bello",
+      "companyName": "Tidepool Analytics",
       "tone": "direct",
-      "description": "An odds and sports data feed provider whose operator clients raise tickets about feed latency during live events"
+      "description": "A 30-person B2B analytics startup starting to sell to enterprise customers"
+    },
+    "helper": "tidepool_junk",
+    "expectAbsent": "could not classify|n/a|INTL"
+  },
+  {
+    "id": "hireloop-warm-generic",
+    "why": "Middle confidence: only broad hints (robotics, hardware startup), no specific facts such as Germany or Series B",
+    "input": {
+      "senderName": "Lena Park",
+      "senderCompany": "Hireloop",
+      "offer": "Hireloop finds and screens senior embedded and firmware engineers, and only charges when someone is hired.",
+      "proof": "",
+      "recipientName": "Dr. Felix Wagner",
+      "companyName": "Quarry Robotics",
+      "tone": "warm",
+      "description": "Builds autonomous machines for quarries and has several open firmware roles"
+    },
+    "helper": "quarry_mid",
+    "expectAbsent": "Germany|Series B"
+  },
+  {
+    "id": "sendcraft-conflict",
+    "why": "The lookup says retail/ecommerce, the description says B2B HR software; the description must win",
+    "input": {
+      "senderName": "Chris Doyle",
+      "senderCompany": "Sendcraft",
+      "offer": "Sendcraft keeps product emails out of spam by monitoring deliverability and fixing sender setup problems before they hurt.",
+      "proof": "",
+      "recipientName": "Hannah Okafor",
+      "companyName": "Marlow & Finch",
+      "tone": "direct",
+      "description": "B2B HR software that sends onboarding and payroll emails to thousands of employees every week"
+    },
+    "helper": "marlow_conflict",
+    "expectAbsent": "shopper|retail|abandoned cart|promotion"
+  },
+  {
+    "id": "acme-ignored",
+    "why": "Low confidence: the lookup thinks it is a manufacturer; the email must follow the description (a dental clinic group)",
+    "input": {
+      "senderName": "Sam Lee",
+      "senderCompany": "Shiftready",
+      "offer": "Shiftready books temporary dental nurses and hygienists within 24 hours, all vetted and insured.",
+      "proof": "",
+      "recipientName": "maria lopez",
+      "companyName": "Acme Dental Group",
+      "tone": "direct",
+      "description": "A group of nine dental practices that often cancels appointments when staff call in sick"
     },
     "helper": "acme_low",
-    "expectType": "data",
-    "expectAbsent": "manufactur|shipping|returns|product safety"
-  },
-  {
-    "id": "helper-down",
-    "why": "Helper unavailable, description only",
-    "input": {
-      "recipientName": "Jane Doe",
-      "companyName": "Riverline Sportsbook",
-      "tone": "warm",
-      "description": "A sportsbook operator with high withdrawal volume, KYC questions, promo eligibility disputes, and periodic support spikes on big game days"
-    },
-    "helper": null,
-    "expectType": "operator"
-  },
-  {
-    "id": "kyc-vendor-junk-type",
-    "why": "Helper returns companyType 'error: could not classify company' at 0.99",
-    "input": {
-      "recipientName": "Priya Shah",
-      "companyName": "VerifyNow KYC",
-      "tone": "direct",
-      "description": "An identity verification provider for sportsbooks and casinos that handles document checks and verification status questions"
-    },
-    "helper": "verifynow_error_type",
-    "expectType": "compliance"
+    "expectAbsent": "manufactur|supply chain"
   }
 ]
