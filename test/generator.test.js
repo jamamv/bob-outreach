@@ -9,7 +9,7 @@ const input = {
   companyName: 'Corvid Logistics',
   description: 'A freight brokerage with a growing sales team',
   tone: 'direct',
-  senderName: 'Sam Lee',
+  senderName: 'Sam Taylor',
   senderCompany: 'Fieldnote',
   offer: 'Fieldnote records sales calls and writes the CRM notes automatically.',
   proof: '',
@@ -65,13 +65,13 @@ test('stops after maxRepairs and reports ok=false', async () => {
 });
 
 test('greeting and sign-off come from code, by tone, signed by the sender', () => {
-  assert.match(renderEmail(input, ['Body.']), /^Hi Jane,\n\nBody\.\n\nBest,\nSam Lee\nFieldnote$/);
-  assert.match(renderEmail({ ...input, tone: 'warm' }, ['Body.']), /Warm regards,\nSam Lee\nFieldnote$/);
+  assert.match(renderEmail(input, ['Body.']), /^Hi Jane,\n\nBody\.\n\nBest,\nSam Taylor\nFieldnote$/);
+  assert.match(renderEmail({ ...input, tone: 'warm' }, ['Body.']), /Warm regards,\nSam Taylor\nFieldnote$/);
 });
 
 test('the company line is dropped when it would start like the name line', () => {
   assert.equal(signature({ senderName: 'Acme Bot', senderCompany: 'Acme' }), 'Acme Bot');
-  assert.equal(signature({ senderName: 'Sam Lee', senderCompany: 'Fieldnote' }), 'Sam Lee\nFieldnote');
+  assert.equal(signature({ senderName: 'Sam Taylor', senderCompany: 'Fieldnote' }), 'Sam Taylor\nFieldnote');
 });
 
 test('the sender profile reaches the prompt, and proof only when given', () => {

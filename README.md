@@ -24,7 +24,7 @@ Every email is written from your **sender profile**:
 
 | Field | Example | Notes |
 |---|---|---|
-| Your name | Sam Lee | Signs the email. |
+| Your name | Sam Taylor | Signs the email. |
 | Your company | Fieldnote | Must appear in the email (checked). Signs the email under your name. |
 | What you offer | Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically. | One or two sentences in your words. The only source Bob uses for what you do, so it never invents features. |
 | Proof point (optional) | Reps at Hartley Freight save about 4 hours a week. | A real result or customer. Without one, Bob makes no claims about past results. |

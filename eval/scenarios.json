@@ -3,7 +3,7 @@
     "id": "fieldnote-tailored",
     "why": "Tailoring A/B (high): facts only the lookup supplies (Mexico, ramp time, cross-border) should reach the email; the description mentions none of them",
     "input": {
-      "senderName": "Sam Lee",
+      "senderName": "Sam Taylor",
       "senderCompany": "Fieldnote",
       "offer": "Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically, so reps spend their time selling.",
       "proof": "",
@@ -19,7 +19,7 @@
     "id": "fieldnote-lowconf",
     "why": "Tailoring A/B (low): the same payload at confidence 0.21 must not leak into the email",
     "input": {
-      "senderName": "Sam Lee",
+      "senderName": "Sam Taylor",
       "senderCompany": "Fieldnote",
       "offer": "Fieldnote records sales calls and writes the CRM notes and follow-up tasks automatically, so reps spend their time selling.",
       "proof": "",
@@ -35,11 +35,11 @@
     "id": "pantrypal-warm-nolookup",
     "why": "Lookup down: written from the description alone, warm tone, with a proof point",
     "input": {
-      "senderName": "Priya Shah",
+      "senderName": "Emma Clarke",
       "senderCompany": "Pantrypal",
       "offer": "Pantrypal tracks kitchen stock from supplier invoices and tells chefs what to reorder before they run out.",
       "proof": "Harbour Kitchen cut food waste by about a fifth in three months.",
-      "recipientName": "Marco Rossi",
+      "recipientName": "Oliver Bennett",
       "companyName": "Olive & Ash",
       "tone": "warm",
       "description": "A group of four Mediterranean restaurants in Bristol, opening a fifth this spring"
@@ -50,11 +50,11 @@
     "id": "securelane-junk",
     "why": "Junk lookup values at confidence 0.99 (error string as company type, n/a, vague regions) must be dropped",
     "input": {
-      "senderName": "Tom Becker",
+      "senderName": "James Walker",
       "senderCompany": "Securelane",
       "offer": "Securelane automates SOC 2 evidence collection and fills in security questionnaires from your existing policies.",
       "proof": "",
-      "recipientName": "Aisha Bello",
+      "recipientName": "Lucy Harris",
       "companyName": "Tidepool Analytics",
       "tone": "direct",
       "description": "A 30-person B2B analytics startup starting to sell to enterprise customers"
@@ -66,11 +66,11 @@
     "id": "hireloop-warm-generic",
     "why": "Middle confidence: only broad hints (robotics, hardware startup), no specific facts such as Germany or Series B",
     "input": {
-      "senderName": "Lena Park",
+      "senderName": "Charlotte Hughes",
       "senderCompany": "Hireloop",
       "offer": "Hireloop finds and screens senior embedded and firmware engineers, and only charges when someone is hired.",
       "proof": "",
-      "recipientName": "Dr. Felix Wagner",
+      "recipientName": "Dr. Henry Wright",
       "companyName": "Quarry Robotics",
       "tone": "warm",
       "description": "Builds autonomous machines for quarries and has several open firmware roles"
@@ -86,7 +86,7 @@
       "senderCompany": "Sendcraft",
       "offer": "Sendcraft keeps product emails out of spam by monitoring deliverability and fixing sender setup problems before they hurt.",
       "proof": "",
-      "recipientName": "Hannah Okafor",
+      "recipientName": "Hannah Cooper",
       "companyName": "Marlow & Finch",
       "tone": "direct",
       "description": "B2B HR software that sends onboarding and payroll emails to thousands of employees every week"
@@ -98,11 +98,11 @@
     "id": "acme-ignored",
     "why": "Low confidence: the lookup thinks it is a manufacturer; the email must follow the description (a dental clinic group)",
     "input": {
-      "senderName": "Sam Lee",
+      "senderName": "Sam Taylor",
       "senderCompany": "Shiftready",
       "offer": "Shiftready books temporary dental nurses and hygienists within 24 hours, all vetted and insured.",
       "proof": "",
-      "recipientName": "maria lopez",
+      "recipientName": "emily ward",
       "companyName": "Acme Dental Group",
       "tone": "direct",
       "description": "A group of nine dental practices that often cancels appointments when staff call in sick"

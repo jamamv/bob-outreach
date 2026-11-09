@@ -12,7 +12,7 @@ Bob writes personalised cold emails.
 Prompts for any value not passed as a flag (or set in .env).
 
 About you (defaults: SENDER_NAME, SENDER_COMPANY, SENDER_OFFER, SENDER_PROOF):
-  --from-name <name>     Your name, e.g. "Sam Lee"
+  --from-name <name>     Your name, e.g. "Sam Taylor"
   --from-company <name>  Your company, e.g. "Fieldnote"
   --offer <text>         What you sell, in one or two sentences
   --proof <text>         Optional: a real result or customer you can mention

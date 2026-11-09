@@ -11,7 +11,7 @@ Corvid Logistics looks like a team that makes a lot of calls. Fieldnote logs eac
 Would you be open to a quick 15-minute call next week?
 
 Best,
-Sam Lee
+Sam Taylor
 Fieldnote`;
 
 const required = { recipientName: 'Jane Doe', companyName: 'Corvid Logistics', senderCompany: 'Fieldnote' };
@@ -68,7 +68,7 @@ test('names: accents, titles and lowercase are handled the same in greeting and 
   assert.equal(firstNameOf('jane doe'), 'Jane');
   assert.equal(firstNameOf('Mary-Jane Watson'), 'Mary-Jane');
   for (const name of ['José García', 'Zoë Smith', 'Łukasz Nowak', 'Søren Berg']) {
-    const email = `Hi ${firstNameOf(name)},\n\nI am reaching out from Fieldnote about Corvid Logistics.\n\nWould you be open to a short call?\n\nBest,\nSam Lee\nFieldnote`;
+    const email = `Hi ${firstNameOf(name)},\n\nI am reaching out from Fieldnote about Corvid Logistics.\n\nWould you be open to a short call?\n\nBest,\nSam Taylor\nFieldnote`;
     assert.ok(validateEmail(email, { recipientName: name, companyName: 'Corvid Logistics', senderCompany: 'Fieldnote' }).ok, name);
   }
   assert.ok(!validateEmail('Hi Josefina,\n\nFieldnote call?', { recipientName: 'José' }).ok, 'a longer name must not count as a match');
