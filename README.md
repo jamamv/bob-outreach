@@ -9,8 +9,8 @@ It runs as a CLI and as a small web app, both on one shared core.
 Requires Node 20+.
 
 ```bash
-git clone https://github.com/jamamv/raphie-personalized-outreach.git bob
-cd bob
+git clone https://github.com/jamamv/bob-outreach.git
+cd bob-outreach
 npm install
 cp .env.example .env          # add your OPENAI_API_KEY (and optionally SENDER_*)
 npm start                     # CLI: asks about you, then about them
