@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Prints how happy salespeople are with the emails: npm run feedback
+// Prints how people rated the emails: npm run feedback
 import { readFileSync, existsSync } from 'node:fs';
 import { config } from '../src/config.js';
 import { summarizeFeedback } from '../src/feedback.js';

@@ -42,7 +42,7 @@ const REGION_NAMES = {
   FR: 'France', NL: 'the Netherlands', IE: 'Ireland', AU: 'Australia', NZ: 'New Zealand', IN: 'India', SG: 'Singapore', JP: 'Japan',
 };
 const ACRONYMS = {
-  ai: 'AI', api: 'API', b2b: 'B2B', b2c: 'B2C', crm: 'CRM', erp: 'ERP', gdpr: 'GDPR', hr: 'HR', kyc: 'KYC',
+  ai: 'AI', api: 'API', b2b: 'B2B', b2c: 'B2C', crm: 'CRM', erp: 'ERP', gdpr: 'GDPR', hr: 'HR',
   pii: 'PII', saas: 'SaaS', seo: 'SEO', sla: 'SLA', smb: 'SMB', soc: 'SOC',
 };
 const MAX_LIST = 8;

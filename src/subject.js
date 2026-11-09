@@ -1,8 +1,8 @@
 /**
  * Subject line for a finished email.
  *
- * A separate, small call on the light model (see README "Cost and model
- * choice"): the prompt is short, it is written from the final email so it
+ * A separate, small call on the light model (see README "Prompt design",
+ * model routing): the prompt is short, it is written from the final email so it
  * always matches, and the page can ask for a new subject without rewriting
  * the email. Code checks the rules; one retry, then a plain fallback, so a
  * subject problem can never block the email.
